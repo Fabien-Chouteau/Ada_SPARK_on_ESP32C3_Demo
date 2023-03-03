@@ -55,6 +55,8 @@ static esp_err_t root_get_handler(httpd_req_t *req)
 /* LED control */
 
 #define BLINK_GPIO 8
+// ESP32-C3-DevKit-RUST-1 - https://github.com/esp-rs/esp-rust-board#ios
+//#define BLINK_GPIO 2
 
 static led_strip_handle_t led_strip;
 
@@ -85,7 +87,13 @@ static void configure_led(void)
         .strip_gpio_num = BLINK_GPIO,
         .max_leds = 1, // at least one LED on board
     };
-    ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &led_strip));
+    // Based on https://components.espressif.com/components/espressif/led_strip
+    led_strip_rmt_config_t rmt_config = {
+            .clk_src = RMT_CLK_SRC_DEFAULT, // different clock source can lead to different power consumption
+            .resolution_hz = 10 * 1000 * 1000, // 10MHz
+            .flags.with_dma = false, // whether to enable the DMA feature
+    };
+    ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
     /* Set all LED off to clear all pixels */
     led_strip_clear(led_strip);
 }
